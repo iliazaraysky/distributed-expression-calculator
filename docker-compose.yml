@@ -1,0 +1,107 @@
+version: '3.8'
+
+
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    networks:
+      - lms_network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_DB: calculator_db
+      POSTGRES_USER: calculator_db_user
+      POSTGRES_PASSWORD: calculator_db_password
+      POSTGRES_SSL_MODE: require
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/database_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    depends_on:
+      - rabbitmq
+    networks:
+      - lms_network
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    environment:
+      DATABASE_URL: postgres://calculator_db_user:calculator_db_password@postgres:5432/calculator_db?sslmode=disable
+#      POSTGRES_HOST: calculator_db_postgres
+#      POSTGRES_PORT: 5432
+#      POSTGRES_USER: calculator_db
+#      POSTGRES_PASSWORD: calculator_db_password
+#      POSTGRES_DB: calculator_db
+    depends_on:
+      - rabbitmq
+    ports:
+      - "8080:8080"
+    networks:
+      - lms_network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - lms_network
+
+  worker1:
+    build:
+      context: ./worker1
+    container_name: worker1
+    environment:
+      DATABASE_URL: postgres://calculator_db_user:calculator_db_password@postgres:5432/calculator_db?sslmode=disable
+    depends_on:
+      - postgres
+      - backend
+      - rabbitmq
+    ports:
+      - "8081:8081"
+    networks:
+      - lms_network
+
+  worker2:
+    build:
+      context: ./worker2
+    container_name: worker2
+    environment:
+      DATABASE_URL: postgres://calculator_db_user:calculator_db_password@postgres:5432/calculator_db?sslmode=disable
+    depends_on:
+      - postgres
+      - backend
+      - rabbitmq
+    ports:
+      - "8082:8082"
+    networks:
+      - lms_network
+
+#
+#  worker3:
+#    build:
+#      context: ./worker3
+#    container_name: calculator_worker3
+#    depends_on:
+#      - backend
+#      - postgres
+
+volumes:
+  postgres_data:
+
+networks:
+  lms_network:
