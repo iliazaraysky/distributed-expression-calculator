@@ -3,13 +3,20 @@
 ## Оглавление
 
 1. [Описание проекта](#описание-проекта)
+
 2. [Установка и настройка](#установка-и-настройка)
-	2.1. [Установка Docker](#установка-docker)
-	2.2. [Запуск проекта](#запуск-проекта)
-	2.3. [Выключение проекта](#выключение-проекта)
+
+ 	2.1. [Установка Docker](#установка-docker)
+ 
+ 	2.2. [Запуск проекта](#запуск-проекта)
+
+   	2.3. [Выключение проекта](#выключение-проекта)
+
 3. [Пример использования](#пример-использования)
-	3.1. [Запросы в curl](#запросы-в-curl)
-	3.2. [Работа в GUI](#работа-в-GUI)
+	
+ 	3.1. [Запросы в curl](#запросы-в-curl)
+
+   	3.2. [Работа в GUI](#работа-в-GUI)
 
 ## 1. Описание проекта
 <a name="описание-проекта"></a>
@@ -157,11 +164,11 @@ http://localhost:8080/get-request-by-id/{uuid}
 Ответ получаемый от сервера в формате JSON, структура:
 ```json
 {
-    "unique_id": "abb1f26f-2014-43f6-9f88-22fd6bf7aedc",
-    "query_text": "2 + 1 + 3 + 1",
-    "server_name": "worker3",
-    "result": "7",
-    "status": "Done"
+    "unique_id":"abb1f26f-2014-43f6-9f88-22fd6bf7aedc",
+    "query_text":"2 + 1 + 3 + 1",
+    "server_name":"worker3",
+    "result":"7",
+    "status":"Done"
 }
 ```
 
@@ -183,27 +190,27 @@ http://localhost:8080/setup-workers
 Ответ получаемый от сервера в формате JSON, структура:
 ```json
 [
-    {
-        "worker_name": "worker2",
-        "last_task": "70d9df9f-84ec-426a-b408-31fe7fe8380f",
-        "status": "ready",
-        "last_timeout_setup": "2024-02-17T21:10:21.870463Z",
-        "current_timeout": 11
-    },
-    {
-        "worker_name": "worker3",
-        "last_task": "abb1f26f-2014-43f6-9f88-22fd6bf7aedc",
-        "status": "ready",
-        "last_timeout_setup": "2024-02-17T21:11:37.870463Z",
-        "current_timeout": 12
-    },
-    {
-        "worker_name": "worker1",
-        "last_task": "f3715129-63f5-44a6-ac42-adbfb186ba60",
-        "status": "ready",
-        "last_timeout_setup": "2024-02-17T21:16:31.870463Z",
-        "current_timeout": 10
-    }
+    {
+        "worker_name": "worker2",
+        "last_task": "70d9df9f-84ec-426a-b408-31fe7fe8380f",
+        "status": "ready",
+        "last_timeout_setup": "2024-02-17T21:10:21.870463Z",
+        "current_timeout": 11
+    },
+    {
+        "worker_name": "worker3",
+        "last_task": "abb1f26f-2014-43f6-9f88-22fd6bf7aedc",
+        "status": "ready",
+        "last_timeout_setup": "2024-02-17T21:11:37.870463Z",
+        "current_timeout": 12
+    },
+    {
+        "worker_name": "worker1",
+        "last_task": "f3715129-63f5-44a6-ac42-adbfb186ba60",
+        "status": "ready",
+        "last_timeout_setup": "2024-02-17T21:16:31.870463Z",
+        "current_timeout": 10
+    }
 ]
 ```
 
@@ -220,8 +227,8 @@ http://localhost:8080/setup-workers
 Тело запроса в формате JSON, структура:
 ```json
 {
-    "worker_name": "worker1",
-    "timeout_data": 10
+ "worker_name":"worker1",
+ "timeout_data":10
 }
 ```
 
@@ -231,6 +238,7 @@ curl -X POST -H "Content-Type: application/json" -d "{\"worker_name\": \"worker1
 ```
 
 ## 3.2. Работа в GUI
+<a name="работа-в-GUI"></a>
 После запуска проекта он доступен по адресу:
 ```bash
 http://localhost:3000/
