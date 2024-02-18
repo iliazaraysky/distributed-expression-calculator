@@ -91,7 +91,7 @@ worker1   | 2024/02/18 10:08:45 No messages in the queue, waiting
 
 ## 2.4. Возможные ошибки
 <a name="возможные-ошибки"></a>
-Я попробовал запускать проект на разных устроуствах, на 1 из 3, вылезла ошибка:
+Я попробовал запускать проект на разных стендах, на 1 из 3 вылезла ошибка:
 ```
 ERROR: for postgres  Cannot create container for service postgres: Conflict.
 The container name "/postgres" is already in use by container "ac58e56714bbf18014776cfa3e47ae31d597db721cf00d0c0b36c0621dffd10a".
