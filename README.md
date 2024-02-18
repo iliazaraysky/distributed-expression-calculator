@@ -315,3 +315,4 @@ UUID запроса, Запрос, Время создания, Время за�
 
 ## 5. Схема работы Backend
 <a name="схема-работы-backend"></a>
+![Схема Backend](https://github.com/iliazaraysky/distributed-expression-calculator/blob/main/%D0%A1%D1%85%D0%B5%D0%BC%D0%B0%20%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%8B%20backend.png)
