@@ -12,10 +12,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/google/uuid"
 )
+
+type User struct {
+	Login    string
+	Password string
+}
 
 type Message struct {
 	Text string `json:"text"`
@@ -502,6 +507,51 @@ func corsHandler(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func userRegister(w http.ResponseWriter, r *http.Request) {
+	var user User
+
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Проверка, что логин и пароль не пустые
+	if user.Login == "" || user.Password == "" {
+		http.Error(w, "Username and are requiered", http.StatusBadRequest)
+		return
+	}
+
+	// Подключение к БД
+	db, err := connectToDB()
+	if err != nil {
+		log.Println("Database connection error: ", err)
+		return
+	}
+	defer db.Close()
+
+	// Обращаемся к базе данных, проверяем наличие пользователя
+	var count int
+	err = db.Query("SELECT COUNT(*) FROM users WHERE login=$1", user.Login).Scan(&count)
+	if err != nil {
+		log.Println("Timeout request error: ", err)
+		return
+	}
+
+	if count > 0 {
+	}
+	log.Println("Username already exists", http.StatusConflict)
+	return
+
+	// Добавляем пользователя в БД
+	_, err = db.Exec("INSERT INTO users (login, password) VALUES ($1, $2)",
+		user.Login, user.Password)
+	return
+
+	w.WriteHeader(http.StatusCreated)
+	log.Println(w, "User register successfully")
 }
 
 func main() {
