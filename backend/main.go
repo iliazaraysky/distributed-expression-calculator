@@ -17,10 +17,10 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type User struct {
-	Login    string
-	Password string
-}
+//type User struct {
+//	Login    string `json:"login"`
+//	Password string `json:"password"`
+//}
 
 type Message struct {
 	Text string `json:"text"`
@@ -509,50 +509,70 @@ func corsHandler(next http.Handler) http.Handler {
 	})
 }
 
-//func userRegister(w http.ResponseWriter, r *http.Request) {
-//	var user User
-//
-//	err := json.NewDecoder(r.Body).Decode(&user)
-//	if err != nil {
-//		http.Error(w, err.Error(), http.StatusBadRequest)
-//		return
-//	}
-//
-//	// Проверка, что логин и пароль не пустые
-//	if user.Login == "" || user.Password == "" {
-//		http.Error(w, "Username and are requiered", http.StatusBadRequest)
-//		return
-//	}
-//
-//	// Подключение к БД
-//	db, err := connectToDB()
-//	if err != nil {
-//		log.Println("Database connection error: ", err)
-//		return
-//	}
-//	defer db.Close()
-//
-//	// Обращаемся к базе данных, проверяем наличие пользователя
-//	var count int
-//	err = db.Query("SELECT COUNT(*) FROM users WHERE login=$1", user.Login).Scan(&count)
-//	if err != nil {
-//		log.Println("Timeout request error: ", err)
-//		return
-//	}
-//
-//	if count > 0 {
-//	}
-//	log.Println("Username already exists", http.StatusConflict)
-//	return
-//
-//	// Добавляем пользователя в БД
-//	_, err = db.Exec("INSERT INTO users (login, password) VALUES ($1, $2)",
-//		user.Login, user.Password)
-//	return
-//
-//	w.WriteHeader(http.StatusCreated)
-//	log.Println(w, "User register successfully")
-//}
+type User struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
+func userRegister(w http.ResponseWriter, r *http.Request) {
+	var user User
+
+	if r.Method == http.MethodGet {
+		message := Message{Text: "Отправлен GET-запрос"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(message)
+	}
+
+	if r.Method == http.MethodPost {
+		err := json.NewDecoder(r.Body).Decode(&user)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		log.Println("JSON decode data: ", user.Login, user.Password)
+
+		// Проверка, что логин и пароль не пустые
+		if user.Login == "" || user.Password == "" {
+			http.Error(w, "Username and are requiered", http.StatusBadRequest)
+			return
+		}
+
+		// Подключение к БД
+		db, err := connectToDB()
+		if err != nil {
+			log.Println("Database connection error: ", err)
+			return
+		}
+		defer db.Close()
+
+		// Обращаемся к базе данных, проверяем наличие пользователя
+		var count int
+		err = db.QueryRow("SELECT COUNT(*) FROM users WHERE login=$1", user.Login).Scan(&count)
+		if err != nil {
+			log.Println("Timeout request error: ", err)
+			return
+		}
+
+		log.Println("Users found: ", count)
+
+		if count > 0 {
+			log.Println("Username already exists", http.StatusConflict)
+			return
+		}
+
+		// Добавляем пользователя в БД
+		_, err = db.Exec("INSERT INTO users (login, password) VALUES ($1, $2)", user.Login, user.Password)
+		if err != nil {
+			log.Println("Database insertion error: ", err)
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		log.Println(w, "User register successfully")
+	}
+}
 
 func main() {
 	http.HandleFunc("/", helloHandler)
@@ -561,6 +581,7 @@ func main() {
 	http.Handle("/get-operations", corsHandler(http.HandlerFunc(getOperationsHandler)))
 	http.Handle("/add-expression", corsHandler(http.HandlerFunc(addExpressionHandler)))
 	http.Handle("/get-expressions", corsHandler(http.HandlerFunc(getExpressionHandler)))
+	http.Handle("/registration", corsHandler(http.HandlerFunc(userRegister)))
 
 	fmt.Println("Server is listening on :8080")
 	http.ListenAndServe(":8080", nil)
