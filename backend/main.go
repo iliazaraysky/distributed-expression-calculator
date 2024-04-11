@@ -17,10 +17,10 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-//type User struct {
-//	Login    string `json:"login"`
-//	Password string `json:"password"`
-//}
+type User struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
 
 type Message struct {
 	Text string `json:"text"`
@@ -509,11 +509,7 @@ func corsHandler(next http.Handler) http.Handler {
 	})
 }
 
-type User struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-}
-
+// Регистрация пользователя. Добавление в БД
 func userRegister(w http.ResponseWriter, r *http.Request) {
 	var user User
 
@@ -574,11 +570,24 @@ func userRegister(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Authorization")
+		if token == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
+		}
+		// Если токен валиден, продолжаем выполнение запроса
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	http.HandleFunc("/", helloHandler)
 	http.Handle("/setup-workers", corsHandler(http.HandlerFunc(setupWorkers)))
 	http.Handle("/get-request-by-id/", corsHandler(http.HandlerFunc(getResultByID)))
-	http.Handle("/get-operations", corsHandler(http.HandlerFunc(getOperationsHandler)))
+	http.Handle("/get-operations", authMiddleware(corsHandler(http.HandlerFunc(getOperationsHandler))))
 	http.Handle("/add-expression", corsHandler(http.HandlerFunc(addExpressionHandler)))
 	http.Handle("/get-expressions", corsHandler(http.HandlerFunc(getExpressionHandler)))
 	http.Handle("/registration", corsHandler(http.HandlerFunc(userRegister)))

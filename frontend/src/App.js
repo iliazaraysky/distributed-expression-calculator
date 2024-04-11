@@ -6,6 +6,7 @@ import ExpressionList from './components/ExpressionList';
 import OperationList from './components/OperationList';
 import WorkersList from './components/WorkersList';
 import RequestDetails from "./components/RequestDetails";
+import Register from "./components/Register";
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 
@@ -19,6 +20,7 @@ function App() {
             <Nav.Link as={Link} to="/expression-list">Список выражений</Nav.Link>
             <Nav.Link as={Link} to="/operation-list">Список операций</Nav.Link>
             <Nav.Link as={Link} to="/workers-list">Вычислительные мощности</Nav.Link>
+            <Nav.Link as={Link} to="/registration">Регистрация</Nav.Link>
           </Nav>
         </Navbar>
 
@@ -29,6 +31,7 @@ function App() {
           <Route path="/operation-list" element={<OperationList />} />
           <Route path="/workers-list" element={<WorkersList />} />
           <Route path="/get-request-by-id/:uuid" element={<RequestDetails />} /> {/* Добавьте новый Route */}
+          <Route path="/registration" element={<} />
         </Routes>
       </div>
     </Router>
