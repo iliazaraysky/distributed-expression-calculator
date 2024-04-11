@@ -6,7 +6,7 @@ import ExpressionList from './components/ExpressionList';
 import OperationList from './components/OperationList';
 import WorkersList from './components/WorkersList';
 import RequestDetails from "./components/RequestDetails";
-import Register from "./components/Register";
+import RegistrationPage from "./components/Register";
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 
@@ -31,7 +31,7 @@ function App() {
           <Route path="/operation-list" element={<OperationList />} />
           <Route path="/workers-list" element={<WorkersList />} />
           <Route path="/get-request-by-id/:uuid" element={<RequestDetails />} /> {/* Добавьте новый Route */}
-          <Route path="/registration" element={<} />
+          <Route path="/registration" element={<RegistrationPage />} />
         </Routes>
       </div>
     </Router>

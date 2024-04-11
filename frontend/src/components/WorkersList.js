@@ -169,6 +169,7 @@ function WorkersList() {
                             ))}
                         </div>
                     ) : (
+
                         <p>Loading workers data...</p>
                     )}
                 </div>

@@ -531,7 +531,7 @@ func userRegister(w http.ResponseWriter, r *http.Request) {
 
 		// Проверка, что логин и пароль не пустые
 		if user.Login == "" || user.Password == "" {
-			http.Error(w, "Username and are requiered", http.StatusBadRequest)
+			http.Error(w, "Username and password are requiered", http.StatusBadRequest)
 			return
 		}
 
@@ -548,6 +548,7 @@ func userRegister(w http.ResponseWriter, r *http.Request) {
 		err = db.QueryRow("SELECT COUNT(*) FROM users WHERE login=$1", user.Login).Scan(&count)
 		if err != nil {
 			log.Println("Timeout request error: ", err)
+			http.Error(w, "User already exists", http.StatusBadRequest)
 			return
 		}
 

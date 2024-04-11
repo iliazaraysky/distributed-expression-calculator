@@ -62,11 +62,17 @@ function OperationList() {
                         ))}
                     </div>
                 ) : (
-                    <p>{pageData.data === null ? 'Loading data...' : 'No data available.'}</p>
-                )}
+                    // <p>{pageData.data === null ? 'Loading data...' : 'No data available.'}</p>
+                    <div className="card mb-4 justify-content-center">
+                    <p>Данные по операциям недоступны незарегистрированным пользователям</p>
+                        <Link to={`/registration`}>
+                            <button className="btn btn-primary mt-2 mb-5">Регистрация</button>
+                        </Link>
+                    </div>
+                    )}
             </div>
             <div className="container justify-content-center mt-2 mb-5">
-                {/* Пагинация */}
+            {/* Пагинация */}
                 {pageData.data && pageData.totalPages > 1 &&(
                     <nav>
                         <ul className="pagination justify-content-center">
