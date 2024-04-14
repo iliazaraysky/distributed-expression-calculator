@@ -20,8 +20,17 @@ function OperationList() {
         // Функция для загрузки данных операций
         const fetchOperations = async () => {
             try {
-                const response = await fetch(`http://localhost:8080/get-operations?page=${pageData.currentPage}`);
+                console.log(localStorage.getItem('token'))
+                const token = localStorage.getItem('token')
+                const response = await fetch(`http://localhost:8080/get-operations?page=${pageData.currentPage}`, {
+                    method: 'GET',
+                    headers: new Headers({
+                        'Authorization': `Bearer ${token}`,
+                    }),
+                });
                 const responseData = await response.json();
+                console.log('Ответ сервера', responseData)
+
                 setPageData({
                     data: responseData.data,
                     totalItems: responseData.total_items,
@@ -63,13 +72,19 @@ function OperationList() {
                     </div>
                 ) : (
                     // <p>{pageData.data === null ? 'Loading data...' : 'No data available.'}</p>
-                    <div className="card mb-4 justify-content-center">
-                    <p>Данные по операциям недоступны незарегистрированным пользователям</p>
-                        <Link to={`/registration`}>
-                            <button className="btn btn-primary mt-2 mb-5">Регистрация</button>
-                        </Link>
+                    <div className="container justify-content-center">
+                        <h2 className="h2 mb-3 font-weight-normal text-center">Это раздел доступен только авторизированным пользователям</h2>
+                        <p className="text-center"><i>Зарегистрируйтесь или войдите в систему</i></p>
+                        <div className="row text-center">
+                            <Link to={`/registration`}>
+                                <button className="btn btn-primary mb-2">Регистрация</button>
+                            </Link>
+                            <Link to={`/login`}>
+                                <button className="btn btn-secondary">Войти в кабинет</button>
+                            </Link>
+                        </div>
                     </div>
-                    )}
+                )}
             </div>
             <div className="container justify-content-center mt-2 mb-5">
             {/* Пагинация */}

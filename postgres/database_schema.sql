@@ -198,7 +198,7 @@ SELECT pg_catalog.setval('public.requests_id_seq', 3, true);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: calculator_db_user
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 2, true);
+-- SELECT pg_catalog.setval('public.users_id_seq', 2, true);
 
 
 --

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -499,7 +500,7 @@ func corsHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
@@ -510,11 +511,11 @@ func corsHandler(next http.Handler) http.Handler {
 }
 
 // Регистрация пользователя. Добавление в БД
-func userRegister(w http.ResponseWriter, r *http.Request) {
+func registerHandler(w http.ResponseWriter, r *http.Request) {
 	var user User
 
 	if r.Method == http.MethodGet {
-		message := Message{Text: "Отправлен GET-запрос"}
+		message := Message{Text: "Добро пожаловать на страницу регистрации"}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(message)
@@ -573,25 +574,135 @@ func userRegister(w http.ResponseWriter, r *http.Request) {
 
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-		if token == "" {
+		const hmacSampleSecret = "super_secret_signature"
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte("Unauthorized"))
 			return
 		}
-		// Если токен валиден, продолжаем выполнение запроса
-		next.ServeHTTP(w, r)
+
+		// Проверяем заголовок Authorization
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			log.Println("Invalid token: ", authHeader)
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		// Получаем токен из заголовка
+		tokenString := parts[1]
+
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				log.Println("Unexpected signing method: ", token.Header["alg"])
+				return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(hmacSampleSecret), nil
+		})
+
+		if err != nil || !token.Valid {
+			log.Println(err)
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			// Если токен валиден, продолжаем выполнение запроса
+			log.Println("user name:", claims["name"])
+			next.ServeHTTP(w, r)
+		} else {
+			log.Println(err)
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
 	})
+}
+
+type JWTtoken struct {
+	Token string `json:"token"`
+}
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	var user User
+	const hmacSampleSecret = "super_secret_signature"
+
+	if r.Method == http.MethodGet {
+		message := Message{Text: "Добро пожаловать на страницу авторизации"}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(message)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		err := json.NewDecoder(r.Body).Decode(&user)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Подключение к БД
+		db, err := connectToDB()
+		if err != nil {
+			log.Println("Database connection error: ", err)
+			return
+		}
+		defer db.Close()
+
+		// Делаем запрос в базу данных, для проверки соответствия логина и пароля
+		var checkPassword string
+		err = db.QueryRow("SELECT password FROM users WHERE login = $1", user.Login).Scan(&checkPassword)
+		if err != nil {
+			log.Println(err)
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+
+		// После того, как нашли пользователя. Сравниваем пароль
+		if strings.TrimSpace(checkPassword) != strings.TrimSpace(user.Password) {
+			log.Println("Password mismatch", err)
+			http.Error(w, "Invalid password", http.StatusUnauthorized)
+			return
+		}
+
+		// Создаем JWT токен
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"login": user.Login,
+			"nbf":   time.Now().Unix(),
+			"exp":   time.Now().Add(time.Minute * 10).Unix(),
+			"iat":   time.Now().Unix(),
+		})
+
+		tokenString, err := token.SignedString([]byte(hmacSampleSecret))
+		if err != nil {
+			log.Println(err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Добавление токена в заголовок Authorization
+		//w.Header().Set("Authorization", "Bearer "+tokenString)
+		//w.WriteHeader(http.StatusOK)
+		//return
+		response := JWTtoken{tokenString}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
 }
 
 func main() {
 	http.HandleFunc("/", helloHandler)
 	http.Handle("/setup-workers", corsHandler(http.HandlerFunc(setupWorkers)))
 	http.Handle("/get-request-by-id/", corsHandler(http.HandlerFunc(getResultByID)))
-	http.Handle("/get-operations", authMiddleware(corsHandler(http.HandlerFunc(getOperationsHandler))))
+	http.Handle("/get-operations", corsHandler(authMiddleware(http.HandlerFunc(getOperationsHandler))))
 	http.Handle("/add-expression", corsHandler(http.HandlerFunc(addExpressionHandler)))
 	http.Handle("/get-expressions", corsHandler(http.HandlerFunc(getExpressionHandler)))
-	http.Handle("/registration", corsHandler(http.HandlerFunc(userRegister)))
+	http.Handle("/registration", corsHandler(http.HandlerFunc(registerHandler)))
+	http.Handle("/login", corsHandler(http.HandlerFunc(loginHandler)))
 
 	fmt.Println("Server is listening on :8080")
 	http.ListenAndServe(":8080", nil)

@@ -1,5 +1,5 @@
 // src/App.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './components/Home';
 import ExpressionList from './components/ExpressionList';
@@ -7,21 +7,46 @@ import OperationList from './components/OperationList';
 import WorkersList from './components/WorkersList';
 import RequestDetails from "./components/RequestDetails";
 import RegistrationPage from "./components/Register";
+import LoginPage from "./components/Login";
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
+import Container from 'react-bootstrap/Container';
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+
+  useEffect(() => {
+    document.title = "Калькулятор by LMS";
+  }, []);
+
+  // Функция для выхода из учетной записи
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    window.location.reload()
+  };
+
   return (
     <Router>
       <div>
         <Navbar bg="dark" variant="dark">
-          <Nav className="mr-auto">
-            <Nav.Link as={Link} to="/home">Главная</Nav.Link>
-            <Nav.Link as={Link} to="/expression-list">Список выражений</Nav.Link>
-            <Nav.Link as={Link} to="/operation-list">Список операций</Nav.Link>
-            <Nav.Link as={Link} to="/workers-list">Вычислительные мощности</Nav.Link>
-            <Nav.Link as={Link} to="/registration">Регистрация</Nav.Link>
-          </Nav>
+          <Container>
+            <Navbar.Brand href="/home">Калькулятор by <b className="text-danger">LMS</b></Navbar.Brand>
+            <Nav className="mr-auto">
+              <Nav.Link as={Link} to="/home">Главная</Nav.Link>
+              <Nav.Link as={Link} to="/expression-list">Список выражений</Nav.Link>
+              <Nav.Link as={Link} to="/operation-list">Список операций</Nav.Link>
+              <Nav.Link as={Link} to="/workers-list">Вычислительные мощности</Nav.Link>
+            </Nav>
+            <Nav>
+              <Nav.Link as={Link} to="/registration">Регистрация</Nav.Link>
+              {isLoggedIn ? (
+                  <Nav.Link onClick={handleLogout}>Выход</Nav.Link>
+              ) : (
+                  <Nav.Link as={Link} to="/login">Вход в кабинет</Nav.Link>
+              )}
+            </Nav>
+          </Container>
         </Navbar>
 
         <Routes>
@@ -32,6 +57,7 @@ function App() {
           <Route path="/workers-list" element={<WorkersList />} />
           <Route path="/get-request-by-id/:uuid" element={<RequestDetails />} /> {/* Добавьте новый Route */}
           <Route path="/registration" element={<RegistrationPage />} />
+          <Route path="/login" element={<LoginPage />} />
         </Routes>
       </div>
     </Router>

@@ -120,7 +120,7 @@ function WorkersList() {
 
     return (
         <div className="container">
-            <h2 className="text-center mb-4">Список Workers</h2>
+            <h2 className="text-center mt-2 mb-4">Список Workers</h2>
             <div className="row">
                 <div className="col-md-6">
                     <div>
