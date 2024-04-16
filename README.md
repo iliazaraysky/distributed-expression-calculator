@@ -131,8 +131,56 @@ docker-compose down
 ## 3. Пример использования
 <a name="пример-использования"></a>
 В проекте реализован GUI. Удобнее всего посмотреть работу из него. Но первым пунктом описания сделаны примеры запросов, через `curl`. 
+Во второй части проекты мы добавляли регистрацию и авторизацию. Поэтому в качестве примера, одна из ранее открытых областей, стала закрытой. Теперь нельзя получить доступ к "Списку операций" без токена в заголовке.
 
-### 3.1. Запросы в curl. Добавление вычисления арифметического выражения.
+### 3.1 Регистрация пользователя
+<a name="регистрация-пользователя"></a>
+
+Страница отвечает на GET-запрос, приветствием. Пример запроса:
+```bash
+curl -X GET -H "Content-Type: application/json" http://127.0.0.1:8080/registration
+```
+
+Отправляем POST-запрос по адресу:
+```bash
+http://localhost:8080/registration
+```
+Тело запроса в формате JSON, структура:
+```bash
+{
+  "login": "user",
+  "password": "password123"
+}
+```
+
+Пример запроса:
+```bash
+curl -X POST -H "Content-Type: application/json" -d "{\"login\": \"user1\", \"password\":\"password123\"}" http://127.0.0.1:8080/registration
+```
+
+### 3.2. Авторизация. Получение токена
+<a name="регистрация-пользователя"></a>
+
+Страница отвечает на GET-запрос, приветствием. Пример запроса:
+```bash
+curl -X GET -H "Content-Type: application/json" http://127.0.0.1:8080/login
+```
+
+Отправляем POST-запрос по адресу:
+```bash
+http://localhost:8080/login
+```
+
+Пример запроса:
+```bash
+curl -X POST -H "Content-Type: application/json" -d "{\"login\": \"user1\", \"password\":\"password123\"}" http://127.0.0.1:8080/login
+```
+
+В ответ сервер присылает Token. Пример токена:
+```bash
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTMyNzYwNzcsImlhdCI6MTcxMzI3NTQ3NywibG9naW4iOiJ1c2VyMSIsIm5iZiI6MTcxMzI3NTQ3N30.zseZouXKkOlNL7X7mmOrVIFtu-Ekp2nb0lZ7Wnw_SVE"}
+```
+### 3.3. Запросы в curl. Добавление вычисления арифметического выражения.
 <a name="запросы-в-curl"></a>
 
 Отправляем POST-запрос по адресу:
@@ -195,11 +243,17 @@ http://localhost:8080/get-operations
 
 Данные берутся из БД Postgresql - таблица requests 
 
-Пример запроса:
+Так как во второй части задания у нас появилась авторизация. Простой GET-запрос, будет возвращать `Unauthorized`
+
+Пример запроса без авторизации:
 ```bash
 curl -X GET -H "Content-Type: application/json" http://127.0.0.1:8080/get-operations
 ```
 
+Пример запроса с авторизацией
+```bash
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MTMyNzY1MTEsImlhdCI6MTcxMzI3NTkxMSwibG9naW4iOiJ1c2VyMSIsIm5iZiI6MTcxMzI3NTkxMX0.GL1bbHRijfDo1BortkJMCMrxQwRxexHP8sHEX98bDaA" http://localhost:8080/get-operations
+```
 Так как у этого запроса есть пагинация, следует указать как получать следующие страницы:
 ```bash
 http://localhost:8080/get-operations?page=2
