@@ -41,6 +41,15 @@ type requestById struct {
 	Status     string `json:"status"`
 }
 
+type requestByLogin struct {
+	Login      string `json:"login"`
+	UniqueID   string `json:"unique_id"`
+	QueryText  string `json:"query_text"`
+	ServerName string `json:"server_name"`
+	Result     string `json:"result"`
+	Status     string `json:"status"`
+}
+
 type WorkerControl struct {
 	WorkerName   string    `json:"worker_name"`
 	TimeoutData  int       `json:"timeout_data"`
@@ -465,6 +474,35 @@ func getExpressionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 
+// Получаем сведения по операциям конкретного пользователя
+func getResultByLogin(w http.ResponseWriter, r *http.Request) {
+	login := strings.TrimPrefix(r.URL.Path, "/profile/")
+
+	// Подключение к БД
+	db, err := connectToDB()
+	if err != nil {
+		log.Println("Database connection error: ", err)
+		return
+	}
+	defer db.Close()
+
+	var requestData requestByLogin
+
+	// Формируем запрос в БД
+	row := db.QueryRow("SELECT unique_id, query_text, server_name, result, status FROM requests WHERE login = $1", login)
+	err = row.Scan(&requestData.Login, &requestData.QueryText, &requestData.ServerName, &requestData.Result, &requestData.Status)
+
+	if err != nil {
+		log.Println("SQL error: ", err)
+		http.Error(w, "Not Found", http.StatusNotFound)
+		return
+	}
+	// Возвращаем JSON-ответ с информацией о статусе
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(&requestData)
+}
+
 // Получаем сведения о конкретной операции по UniqueID
 func getResultByID(w http.ResponseWriter, r *http.Request) {
 	// Получение идентификатора из URL
@@ -697,6 +735,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", helloHandler)
 	http.Handle("/setup-workers", corsHandler(http.HandlerFunc(setupWorkers)))
+	http.Handle("/profile/", corsHandler(authMiddleware(http.HandlerFunc(getResultByLogin))))
 	http.Handle("/get-request-by-id/", corsHandler(http.HandlerFunc(getResultByID)))
 	http.Handle("/get-operations", corsHandler(authMiddleware(http.HandlerFunc(getOperationsHandler))))
 	http.Handle("/add-expression", corsHandler(http.HandlerFunc(addExpressionHandler)))

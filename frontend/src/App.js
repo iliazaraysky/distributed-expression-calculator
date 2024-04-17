@@ -1,5 +1,5 @@
 // src/App.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, createContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './components/Home';
 import ExpressionList from './components/ExpressionList';
@@ -12,6 +12,8 @@ import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
 import { jwtDecode } from 'jwt-decode';
+
+export const LoginContext = createContext();
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
@@ -67,10 +69,13 @@ function App() {
           <Route path="/expression-list" element={<ExpressionList />} />
           <Route path="/operation-list" element={<OperationList />} />
           <Route path="/workers-list" element={<WorkersList />} />
-          <Route path="/get-request-by-id/:uuid" element={<RequestDetails />} /> {/* Добавьте новый Route */}
+          <Route path="/get-request-by-id/:uuid" element={<RequestDetails />} />
           <Route path="/registration" element={<RegistrationPage />} />
           <Route path="/login" element={<LoginPage />} />
         </Routes>
+      <LoginContext.Provider value={{ username }}>
+        <Home />
+      </LoginContext.Provider>
       </div>
     </Router>
   );

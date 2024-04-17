@@ -1,6 +1,7 @@
 // src/Home.js
 
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useContext} from 'react';
+import { LoginContext } from "../App";
 
 function Home() {
    const initialWorkers = {
@@ -23,6 +24,8 @@ function Home() {
   const [expression, setExpression] = useState('');
   const [showAlert, setShowAlert] = useState(false);
   const [statusList, setStatusList] = useState(initialWorkers);
+  const { login } = useContext(LoginContext);
+
 
   const checkServerStatus = async (url) => {
         try {
