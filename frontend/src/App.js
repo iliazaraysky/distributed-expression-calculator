@@ -11,12 +11,20 @@ import LoginPage from "./components/Login";
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
+import { jwtDecode } from 'jwt-decode';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
+  const [username, setUsername] = useState('');
 
   useEffect(() => {
     document.title = "Калькулятор by LMS";
+    const token = localStorage.getItem('token');
+    if (token) {
+      const decodedToken = jwtDecode(token);
+      const login = decodedToken.login;
+      setUsername(login);
+    }
   }, []);
 
   // Функция для выхода из учетной записи
@@ -39,7 +47,11 @@ function App() {
               <Nav.Link as={Link} to="/workers-list">Вычислительные мощности</Nav.Link>
             </Nav>
             <Nav>
-              <Nav.Link as={Link} to="/registration">Регистрация</Nav.Link>
+              {isLoggedIn ?(
+                  <Nav.Link>{username}</Nav.Link>
+              ) : (
+                  <Nav.Link as={Link} to="/registration">Регистрация</Nav.Link>
+              )}
               {isLoggedIn ? (
                   <Nav.Link onClick={handleLogout}>Выход</Nav.Link>
               ) : (
