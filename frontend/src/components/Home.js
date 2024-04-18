@@ -1,9 +1,12 @@
 // src/Home.js
 
 import React, {useEffect, useState, useContext} from 'react';
-import { LoginContext } from "../App";
+import { UserContext } from "../App";
 
 function Home() {
+    const { username } = useContext(UserContext);
+
+   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
    const initialWorkers = {
         'http://localhost:8081': {
             name: 'Worker 1',
@@ -24,8 +27,6 @@ function Home() {
   const [expression, setExpression] = useState('');
   const [showAlert, setShowAlert] = useState(false);
   const [statusList, setStatusList] = useState(initialWorkers);
-  const { login } = useContext(LoginContext);
-
 
   const checkServerStatus = async (url) => {
         try {
@@ -69,14 +70,15 @@ function Home() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    // Декодируем Token из хранилища, чтобы забрать Login
+    console.log("User send message", username)
     // Отправка данных на эндпоинт
     fetch('http://localhost:8080/add-expression', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text: expression }),
+      body: JSON.stringify({ text: expression, user: username }),
     })
       .then(response => response.json())
       .then(data => {
@@ -101,7 +103,6 @@ function Home() {
           urls.forEach((url) => checkServerStatus(url));
       }, 6000);
       return () => clearInterval(intervalWorkersData)
-
   }, []);
 
   return (
@@ -110,24 +111,29 @@ function Home() {
         <div className="row mb-5">
             <div>
                 <h4>Строка отправки выражения</h4>
-                <form onSubmit={handleSubmit} className="form-floating">
-                    <div className="mb-3">
-                        <input
-                            type="text"
-                            className="form-control"
-                            id="expressionInput"
-                            value={expression}
-                            onChange={handleExpressionChange}
-                        />
-                    </div>
-                    <button type="submit" className="btn btn-primary">Отправить</button>
-                </form>
+                {isLoggedIn ?(
+                    <form onSubmit={handleSubmit} className="form-floating">
+                        <div className="mb-3">
+                            <input
+                                type="text"
+                                className="form-control"
+                                id="expressionInput"
+                                value={expression}
+                                onChange={handleExpressionChange}
+                            />
+                        </div>
+                        <button type="submit" className="btn btn-primary">Отправить</button>
+                    </form>
+                ) : (
+                    <h4 className="text-danger">Отправка выражений доступна только после авторизации</h4>
+                )}
 
                 {showAlert && (
                     <div className="alert alert-success mt-3" role="alert">
                         Ваше выражение успешно отправлено!
                     </div>
                 )}
+
             </div>
         </div>
 

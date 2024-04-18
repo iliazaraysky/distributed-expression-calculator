@@ -31,6 +31,7 @@ CREATE TABLE public.requests (
     creation_time timestamp with time zone,
     completion_time timestamp with time zone,
     server_name character varying(50),
+    username character varying(50),
     result text,
     execution_time interval,
     status text
@@ -161,10 +162,10 @@ ALTER TABLE ONLY public.workers ALTER COLUMN id SET DEFAULT nextval('public.work
 -- Data for Name: requests; Type: TABLE DATA; Schema: public; Owner: calculator_db_user
 --
 
-COPY public.requests (id, unique_id, query_text, creation_time, completion_time, server_name, result, execution_time, status) FROM stdin;
-1	abb1f26f-2014-43f6-9f88-22fd6bf7aedc	2 + 1 + 3 + 1	2024-02-11 21:17:24.764203+00	2024-02-11 21:17:36.870463+00	worker3	7	00:00:12.10626	Done
-2	70d9df9f-84ec-426a-b408-31fe7fe8380f	2 + 2 + 1 + 12	2024-02-11 21:17:34.333891+00	2024-02-11 21:17:48.561868+00	worker2	17	3952215:46:40	Done
-3	a58338de-a36c-4013-aa52-c51f755da11f	25 + 2 + 1 + 12	2024-02-11 21:17:39.952909+00	2024-02-11 21:18:01.004218+00	worker1	40	00:00:21.051309	Done
+COPY public.requests (id, unique_id, query_text, creation_time, completion_time, server_name, username, result, execution_time, status) FROM stdin;
+1	abb1f26f-2014-43f6-9f88-22fd6bf7aedc	2 + 1 + 3 + 1	2024-02-11 21:17:24.764203+00	2024-02-11 21:17:36.870463+00	worker3	adm	7	00:00:12.10626	Done
+2	70d9df9f-84ec-426a-b408-31fe7fe8380f	2 + 2 + 1 + 12	2024-02-11 21:17:34.333891+00	2024-02-11 21:17:48.561868+00	worker2	adm	17	3952215:46:40	Done
+3	a58338de-a36c-4013-aa52-c51f755da11f	25 + 2 + 1 + 12	2024-02-11 21:17:39.952909+00	2024-02-11 21:18:01.004218+00	worker1	adm	40	00:00:21.051309	Done
 \.
 
 

@@ -25,11 +25,13 @@ type User struct {
 
 type Message struct {
 	Text string `json:"text"`
+	User string `json:"user"`
 }
 
 type MessageForQueue struct {
 	UniqueId     string    `json:"unique_id"`
 	QueryText    string    `json:"query_text"`
+	User         string    `json:"user"`
 	CreationTime time.Time `json:"creation_time"`
 }
 
@@ -124,8 +126,8 @@ func insertRequestData(queue MessageForQueue) error {
 	}
 	defer db.Close()
 
-	_, err = db.Exec("INSERT INTO requests (unique_id, query_text, creation_time, status) VALUES ($1, $2, $3, $4)",
-		queue.UniqueId, queue.QueryText, queue.CreationTime, "In queue")
+	_, err = db.Exec("INSERT INTO requests (unique_id, query_text, creation_time, username, status) VALUES ($1, $2, $3, $4, $5)",
+		queue.UniqueId, queue.QueryText, queue.CreationTime, queue.User, "In queue")
 	return err
 }
 
@@ -186,7 +188,7 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Отправка сообщения в брокер
-func SendMessageToQueue(message string) error {
+func SendMessageToQueue(message, user string) error {
 	conn, err := amqp.Dial("amqp://user:password@rabbitmq:5672/")
 	if err != nil {
 		return fmt.Errorf("Failed to connect to RabbitMQ: %v", err)
@@ -215,6 +217,7 @@ func SendMessageToQueue(message string) error {
 	messageForQueue := MessageForQueue{
 		UniqueId:     uniqueID,
 		QueryText:    message,
+		User:         user,
 		CreationTime: time.Now(),
 	}
 
@@ -253,9 +256,10 @@ func addExpressionHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
+	log.Println(requestBody.Text, requestBody.User)
 
 	// Отправляем сообщение в брокер
-	err = SendMessageToQueue(requestBody.Text)
+	err = SendMessageToQueue(requestBody.Text, requestBody.User)
 	if err != nil {
 		log.Printf("Error message: %v", err)
 		http.Error(w, "Failed to send message to the queue: %v", http.StatusInternalServerError)
