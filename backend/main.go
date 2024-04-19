@@ -99,6 +99,10 @@ type PageDataExpression struct {
 	ItemsPerPage int                `json:"items_per_page"`
 }
 
+type JWTtoken struct {
+	Token string `json:"token"`
+}
+
 // Подключение к базе данных. DATABASE_URL прописан при развертывании БД
 func connectToDB() (*sql.DB, error) {
 	connStr := os.Getenv("DATABASE_URL")
@@ -614,6 +618,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Проверяем наличие токена авторизации
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		const hmacSampleSecret = "super_secret_signature"
@@ -659,10 +664,6 @@ func authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 	})
-}
-
-type JWTtoken struct {
-	Token string `json:"token"`
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {

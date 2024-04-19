@@ -4,7 +4,8 @@ import React, {useEffect, useState, useContext} from 'react';
 import { UserContext } from "../App";
 
 function Home() {
-    const { username } = useContext(UserContext);
+    const { username, tokenExpiration } = useContext(UserContext);
+
 
    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
    const initialWorkers = {
@@ -70,8 +71,7 @@ function Home() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Декодируем Token из хранилища, чтобы забрать Login
-    console.log("User send message", username)
+
     // Отправка данных на эндпоинт
     fetch('http://localhost:8080/add-expression', {
       method: 'POST',

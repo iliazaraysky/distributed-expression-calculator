@@ -18,6 +18,7 @@ export const UserContext = createContext();
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
     const [username, setUsername] = useState('');
+    
 
     useEffect(() => {
         document.title = "Калькулятор by LMS";
@@ -28,6 +29,14 @@ function App() {
             const decodedToken = jwtDecode(token);
             const login = decodedToken.login;
             setUsername(login);
+
+            // Проверяем не истек ли токен
+            const currentTimeInSecond = Math.floor(Date.now() / 1000);
+            const exp = decodedToken.exp;
+            if (currentTimeInSecond > exp) {
+                localStorage.removeItem('token');
+                window.location.reload()
+            }
         }
     }, []);
 

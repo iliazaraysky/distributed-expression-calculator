@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
 
 const RegistrationPage = () => {
     const [formData, setFormData] = useState({
         login: '',
         password: '',
-        // email: '',
     });
 
     const [message, setMessage] = useState('');
+    const [isRegistered, setIsRegistered] = useState(false);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -31,6 +32,11 @@ const RegistrationPage = () => {
                 }
                 if (response.status === 201) {
                     setMessage('Успешная регистрация');
+
+                    // Если не ставить задержку, он моментально оказывается там, поэтому я установил 1.5 секунды
+                    setTimeout(() => {
+                        setIsRegistered(true);
+                    }, 1500);
                 }
                 if (response.status === 400) {
                     setMessage('Проверьте логин и пароль. Возможны пустые поля');
@@ -46,6 +52,13 @@ const RegistrationPage = () => {
                 setMessage('Ошибка регистрации')
             });
     };
+
+    // Если пользователь успешно зарегистрирован, перенаправляем его на страницу авторизации
+    if (isRegistered) {
+        setTimeout(() => {
+            return <Navigate to="/login" />;
+        }, 1500)
+    }
 
     return (
         <div className="text-center">
@@ -81,18 +94,6 @@ const RegistrationPage = () => {
                                 />
                             </div>
                         </div>
-                        {/*<label className="sr-only" htmlFor="login">Логин:</label>*/}
-                        {/*<label className="sr-only" htmlFor="password">Пароль:</label>*/}
-                        {/*<label className="sr-only" htmlFor="email">Электронная почта:</label>*/}
-                        {/*<input*/}
-                        {/*    className="form-control"*/}
-                        {/*    type="email"*/}
-                        {/*    id="email"*/}
-                        {/*    name="email"*/}
-                        {/*    placeholder="Электронная почта"*/}
-                        {/*    value={formData.email}*/}
-                        {/*    onChange={handleChange}*/}
-                        {/*/>*/}
                         <button className="btn btn-lg btn-primary btn-block mt-2" type="submit">Создать</button>
                     </form>
             </div>
