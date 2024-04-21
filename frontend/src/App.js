@@ -1,6 +1,6 @@
 // src/App.js
 import React, {createContext, useEffect, useState} from 'react';
-import {BrowserRouter as Router, Link, Route, Routes} from 'react-router-dom';
+import {BrowserRouter as Router, Link, Route, Routes, Navigate} from 'react-router-dom';
 import Home from './components/Home';
 import ExpressionList from './components/ExpressionList';
 import OperationList from './components/OperationList';
@@ -12,13 +12,14 @@ import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
 import {jwtDecode} from 'jwt-decode';
+import UserRequestDetails from "./components/UserRequestDetails";
 
 export const UserContext = createContext();
 
 function App() {
     const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
     const [username, setUsername] = useState('');
-    
+
 
     useEffect(() => {
         document.title = "Калькулятор by LMS";
@@ -44,7 +45,7 @@ function App() {
     const handleLogout = () => {
         localStorage.removeItem('token');
         setIsLoggedIn(false);
-        window.location.reload()
+        window.location.reload();
     };
 
     return (
@@ -61,7 +62,7 @@ function App() {
                         </Nav>
                         <Nav>
                             {isLoggedIn ? (
-                                <Nav.Link>{username}</Nav.Link>
+                                <Nav.Link as={Link} to={`/get-operation-by-user-id/${username}`}>{username}</Nav.Link>
                             ) : (
                                 <Nav.Link as={Link} to="/registration">Регистрация</Nav.Link>
                             )}
@@ -82,6 +83,7 @@ function App() {
                         <Route path="/operation-list" element={<OperationList/>}/>
                         <Route path="/workers-list" element={<WorkersList/>}/>
                         <Route path="/get-request-by-id/:uuid" element={<RequestDetails/>}/>
+                        <Route path="/get-operation-by-user-id/:username" element={<UserRequestDetails/>}/>
                         <Route path="/registration" element={<RegistrationPage/>}/>
                         <Route path="/login" element={<LoginPage/>}/>
                     </Routes>

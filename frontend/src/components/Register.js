@@ -55,9 +55,7 @@ const RegistrationPage = () => {
 
     // Если пользователь успешно зарегистрирован, перенаправляем его на страницу авторизации
     if (isRegistered) {
-        setTimeout(() => {
-            return <Navigate to="/login" />;
-        }, 1500)
+        return <Navigate to="/login" />;
     }
 
     return (

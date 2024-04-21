@@ -43,13 +43,13 @@ type requestById struct {
 	Status     string `json:"status"`
 }
 
-type requestByLogin struct {
-	Login      string `json:"login"`
-	UniqueID   string `json:"unique_id"`
-	QueryText  string `json:"query_text"`
-	ServerName string `json:"server_name"`
-	Result     string `json:"result"`
-	Status     string `json:"status"`
+type requestByUsername struct {
+	Username   string         `json:"username"`
+	UniqueID   string         `json:"unique_id"`
+	QueryText  string         `json:"query_text"`
+	ServerName string         `json:"server_name"`
+	Result     sql.NullString `json:"result"`
+	Status     string         `json:"status"`
 }
 
 type WorkerControl struct {
@@ -97,6 +97,14 @@ type PageDataExpression struct {
 	TotalPages   int                `json:"total_pages"`
 	CurrentPage  int                `json:"current_page"`
 	ItemsPerPage int                `json:"items_per_page"`
+}
+
+type PageDataExpressionForUserPage struct {
+	Data         []requestByUsername `json:"data"`
+	TotalItems   int                 `json:"total_items"`
+	TotalPages   int                 `json:"total_pages"`
+	CurrentPage  int                 `json:"current_page"`
+	ItemsPerPage int                 `json:"items_per_page"`
 }
 
 type JWTtoken struct {
@@ -482,33 +490,99 @@ func getExpressionHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonData)
 }
 
-// Получаем сведения по операциям конкретного пользователя
-func getResultByLogin(w http.ResponseWriter, r *http.Request) {
-	login := strings.TrimPrefix(r.URL.Path, "/profile/")
+// Получаем сведения об операциях конкретного пользователя по username
+func getResultByUsername(w http.ResponseWriter, r *http.Request) {
+	// Получение идентификатора из URL
+	var results []requestByUsername
+	uniqueId := strings.TrimPrefix(r.URL.Path, "/get-operation-by-user-id/")
 
 	// Подключение к БД
 	db, err := connectToDB()
 	if err != nil {
-		log.Println("Database connection error: ", err)
+		log.Println("Database connection error, getExpressionHandler: ", err)
 		return
 	}
 	defer db.Close()
 
-	var requestData requestByLogin
-
 	// Формируем запрос в БД
-	row := db.QueryRow("SELECT unique_id, query_text, server_name, result, status FROM requests WHERE login = $1", login)
-	err = row.Scan(&requestData.Login, &requestData.QueryText, &requestData.ServerName, &requestData.Result, &requestData.Status)
-
+	rows, err := db.Query("SELECT unique_id, query_text, server_name, result, status, username FROM requests WHERE username = $1", uniqueId)
 	if err != nil {
-		log.Println("SQL error: ", err)
-		http.Error(w, "Not Found", http.StatusNotFound)
+		log.Println("Database connection error, getExpressionHandler: ", err)
 		return
 	}
-	// Возвращаем JSON-ответ с информацией о статусе
+	defer rows.Close()
+	//err = row.Scan(&requestData.UniqueID, &requestData.QueryText, &requestData.ServerName, &requestData.Result, &requestData.Status, &requestData.Username)
+	for rows.Next() {
+		var request requestByUsername
+		err := rows.Scan(
+			&request.UniqueID,
+			&request.QueryText,
+			&request.ServerName,
+			&request.Result,
+			&request.Status,
+			&request.Username)
+
+		if err != nil {
+			log.Println("Request error, getExpressionHandler: ", err)
+			return
+		}
+
+		if !request.Result.Valid {
+			request.Result.String = "N/A"
+		}
+
+		results = append(results, request)
+	}
+
+	// Получение номера страницы из параметра запроса (если не указано, используется 1)
+	pageStr := r.URL.Query().Get("page")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	// Разбивка данных на страницы
+	itemsPerPage := 5
+	startIndex := (page - 1) * itemsPerPage
+	endIndex := startIndex + itemsPerPage
+	if endIndex > len(results) {
+		endIndex = len(results)
+	}
+
+	// Формирование JSON для текущей страницы
+	pageData := PageDataExpressionForUserPage{
+		Data:         results[startIndex:endIndex],
+		TotalItems:   len(results),
+		TotalPages:   (len(results) + itemsPerPage - 1) / itemsPerPage,
+		CurrentPage:  page,
+		ItemsPerPage: itemsPerPage,
+	}
+
+	jsonData, err := json.Marshal(pageData)
+	if err != nil {
+		http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
+		return
+	}
+	log.Println(jsonData)
+	// Отправка JSON в ответ
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(&requestData)
+	w.Write(jsonData)
+
+	//// Формируем запрос в БД
+	//row := db.QueryRow("SELECT unique_id, query_text, server_name, result, status, username FROM requests WHERE username = $1", uniqueId)
+	//err = row.Scan(&requestData.UniqueID, &requestData.QueryText, &requestData.ServerName, &requestData.Result, &requestData.Status, &requestData.Username)
+	//
+	//if err != nil {
+	//	log.Println("SQL error: ", err)
+	//	http.Error(w, "User Not Found", http.StatusNotFound)
+	//	return
+	//}
+	//// Возвращаем JSON-ответ с информацией о статусе
+	//w.Header().Set("Content-Type", "application/json")
+	//w.WriteHeader(http.StatusOK)
+	//json.NewEncoder(w).Encode(&requestData)
+
 }
 
 // Получаем сведения о конкретной операции по UniqueID
@@ -725,10 +799,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Добавление токена в заголовок Authorization
-		//w.Header().Set("Authorization", "Bearer "+tokenString)
-		//w.WriteHeader(http.StatusOK)
-		//return
 		response := JWTtoken{tokenString}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -740,8 +810,8 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/", helloHandler)
 	http.Handle("/setup-workers", corsHandler(http.HandlerFunc(setupWorkers)))
-	http.Handle("/profile/", corsHandler(authMiddleware(http.HandlerFunc(getResultByLogin))))
 	http.Handle("/get-request-by-id/", corsHandler(http.HandlerFunc(getResultByID)))
+	http.Handle("/get-operation-by-user-id/", corsHandler(http.HandlerFunc(getResultByUsername)))
 	http.Handle("/get-operations", corsHandler(authMiddleware(http.HandlerFunc(getOperationsHandler))))
 	http.Handle("/add-expression", corsHandler(http.HandlerFunc(addExpressionHandler)))
 	http.Handle("/get-expressions", corsHandler(http.HandlerFunc(getExpressionHandler)))
